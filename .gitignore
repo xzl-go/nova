@@ -1,0 +1,35 @@
+# Go 编译产物
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+
+# Go 依赖缓存
+vendor/
+
+# 编辑器配置
+.vscode/
+.idea/
+*.code-workspace
+*.sublime-workspace
+*.sublime-project
+
+# Vim/Emacs 临时文件
+*.swp
+*.swo
+*~
+
+# MacOS 系统文件
+.DS_Store
+
+# 日志和临时文件
+*.log
+*.tmp
+
+# 覆盖率文件
+coverage.out
+
+# 其他
+node_modules/ 
