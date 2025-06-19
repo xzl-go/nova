@@ -1,0 +1,44 @@
+{
+  "server": {
+    "port": 8080,
+    "read_timeout": 10,
+    "write_timeout": 10,
+    "idle_timeout": 120
+  },
+  "redis": {
+    "addr": "localhost:6379",
+    "password": "",
+    "db": 0,
+    "pool_size": 10,
+    "min_idle_conns": 5
+  },
+  "rate_limit": {
+    "enabled": true,
+    "requests": 100,
+    "period": "1s"
+  },
+  "cache": {
+    "enabled": true,
+    "expiration": 300
+  },
+  "metrics": {
+    "enabled": true,
+    "path": "/metrics"
+  },
+  "swagger": {
+    "enabled": true,
+    "title": "API Documentation",
+    "description": "API Documentation for the application",
+    "version": "1.0.0",
+    "host": "localhost:8080",
+    "base_path": "/api/v1"
+  },
+  "logging": {
+    "level": "info",
+    "filename": "logs/app.log",
+    "max_size": 100,
+    "max_backups": 10,
+    "max_age": 30,
+    "compress": true
+  }
+} 

@@ -1,0 +1,26 @@
+server:
+  port: 8080
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 120s
+
+log:
+  level: info
+  filename: logs/nova.log
+  max_size: 100
+  max_backups: 10
+  max_age: 30
+  compress: true
+
+security:
+  cors:
+    allow_origins: ["*"]
+    allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers: ["Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"]
+    expose_headers: ["Content-Length"]
+    max_age: 86400
+  rate_limit:
+    limit: 100
+    window: 1m
+  csrf:
+    secret: "your-secret-key" 
