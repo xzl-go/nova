@@ -3,8 +3,8 @@ package auth
 import (
 	"time"
 
-	"github.com/xzl/nova/config"
-	"github.com/xzl/nova/logger"
+	"github.com/xzl-go/nova/config"
+	"github.com/xzl-go/nova/logger"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -24,14 +24,14 @@ func GenerateToken(userID uint, username string) (string, error) {
 		UserID:   userID,
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(conf.JWT.ExpireTime) * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(*conf.JWT.ExpireTime) * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(conf.JWT.Secret))
+	return token.SignedString(conf.JWT.Secret)
 }
 
 // ParseToken 解析JWT令牌
@@ -39,7 +39,7 @@ func ParseToken(tokenString string) (*Claims, error) {
 	conf := config.Get()
 
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(conf.JWT.Secret), nil
+		return conf.JWT.Secret, nil
 	})
 
 	if err != nil {

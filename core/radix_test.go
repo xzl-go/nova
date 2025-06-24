@@ -3,6 +3,8 @@ package core
 import (
 	"fmt"
 	"testing"
+
+	core "github.com/xzl-go/nova"
 )
 
 // 基准测试数据
@@ -35,9 +37,9 @@ var (
 // 测试不同路径长度的性能
 func BenchmarkRouterPathLength(b *testing.B) {
 	router := NewRouter()
-	router.AddRoute("GET", shortPath, func(c *Context) {})
-	router.AddRoute("GET", mediumPath, func(c *Context) {})
-	router.AddRoute("GET", longPath, func(c *Context) {})
+	router.AddRoute("GET", shortPath, func(c *core.Context) {})
+	router.AddRoute("GET", mediumPath, func(c *core.Context) {})
+	router.AddRoute("GET", longPath, func(c *core.Context) {})
 
 	b.Run("ShortPath", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -61,9 +63,9 @@ func BenchmarkRouterPathLength(b *testing.B) {
 // 测试不同参数数量的性能
 func BenchmarkRouterParams(b *testing.B) {
 	router := NewRouter()
-	router.AddRoute("GET", noParamPath, func(c *Context) {})
-	router.AddRoute("GET", singleParamPath, func(c *Context) {})
-	router.AddRoute("GET", multiParamPath, func(c *Context) {})
+	router.AddRoute("GET", noParamPath, func(c *core.Context) {})
+	router.AddRoute("GET", singleParamPath, func(c *core.Context) {})
+	router.AddRoute("GET", multiParamPath, func(c *core.Context) {})
 
 	b.Run("NoParams", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -87,7 +89,7 @@ func BenchmarkRouterParams(b *testing.B) {
 // 测试通配符路由性能
 func BenchmarkRouterWildcard(b *testing.B) {
 	router := NewRouter()
-	router.AddRoute("GET", wildcardPath, func(c *Context) {})
+	router.AddRoute("GET", wildcardPath, func(c *core.Context) {})
 
 	b.Run("Wildcard", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -100,7 +102,7 @@ func BenchmarkRouterWildcard(b *testing.B) {
 func BenchmarkRouterMixed(b *testing.B) {
 	router := NewRouter()
 	for _, path := range mixedPaths {
-		router.AddRoute("GET", path, func(c *Context) {})
+		router.AddRoute("GET", path, func(c *core.Context) {})
 	}
 
 	b.Run("Mixed", func(b *testing.B) {
@@ -117,7 +119,7 @@ func BenchmarkRouterRegistration(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		path := fmt.Sprintf("/api/v1/users/%d", i)
-		router.AddRoute("GET", path, func(c *Context) {})
+		router.AddRoute("GET", path, func(c *core.Context) {})
 	}
 }
 
@@ -128,7 +130,7 @@ func BenchmarkRouterMemoryUsage(b *testing.B) {
 	// 预注册一些路由
 	for i := 0; i < 1000; i++ {
 		path := fmt.Sprintf("/api/v1/users/%d", i)
-		router.AddRoute("GET", path, func(c *Context) {})
+		router.AddRoute("GET", path, func(c *core.Context) {})
 	}
 
 	b.ResetTimer()
@@ -145,7 +147,7 @@ func BenchmarkRouterConcurrent(b *testing.B) {
 	// 预注册一些路由
 	for i := 0; i < 1000; i++ {
 		path := fmt.Sprintf("/api/v1/users/%d", i)
-		router.AddRoute("GET", path, func(c *Context) {})
+		router.AddRoute("GET", path, func(c *core.Context) {})
 	}
 
 	b.RunParallel(func(pb *testing.PB) {
@@ -162,7 +164,7 @@ func BenchmarkRouterConcurrent(b *testing.B) {
 func BenchmarkRouterHotPath(b *testing.B) {
 	router := NewRouter()
 	hotPath := "/api/v1/users/123"
-	router.AddRoute("GET", hotPath, func(c *Context) {})
+	router.AddRoute("GET", hotPath, func(c *core.Context) {})
 
 	// 预热
 	for i := 0; i < 1000; i++ {

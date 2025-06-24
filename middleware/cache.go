@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"framework/router"
 	"time"
+
+	core "github.com/xzl-go/nova"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -19,7 +20,7 @@ type CacheConfig struct {
 }
 
 // Cache 缓存中间件
-func Cache(config CacheConfig) router.HandlerFunc {
+func Cache(config CacheConfig) core.HandlerFunc {
 	// 创建 Redis 客户端
 	client := redis.NewClient(&redis.Options{
 		Addr:     config.Addr,
@@ -27,7 +28,7 @@ func Cache(config CacheConfig) router.HandlerFunc {
 		DB:       config.DB,
 	})
 
-	return func(c *router.Context) {
+	return func(c *core.Context) {
 		// 只缓存 GET 请求
 		if c.Request.Method != "GET" {
 			c.Next()
@@ -68,8 +69,8 @@ func Cache(config CacheConfig) router.HandlerFunc {
 }
 
 // ClearCache 清除缓存
-func ClearCache(pattern string) router.HandlerFunc {
-	return func(c *router.Context) {
+func ClearCache(pattern string) core.HandlerFunc {
+	return func(c *core.Context) {
 		// 创建 Redis 客户端
 		client := redis.NewClient(&redis.Options{
 			Addr:     "localhost:6379",

@@ -134,3 +134,28 @@ func Time(key string, value time.Time) zap.Field {
 func Duration(key string, value time.Duration) zap.Field {
 	return zap.Duration(key, value)
 }
+
+// Infof 格式化输出信息日志
+func Infof(format string, args ...interface{}) {
+	Log.Info(fmt.Sprintf(format, args...))
+}
+
+// Errorf 格式化输出错误日志
+func Errorf(format string, args ...interface{}) {
+	Log.Error(fmt.Sprintf(format, args...))
+}
+
+// Warnf 格式化输出警告日志
+func Warnf(format string, args ...interface{}) {
+	Log.Warn(fmt.Sprintf(format, args...))
+}
+
+// Debugf 格式化输出调试日志
+func Debugf(format string, args ...interface{}) {
+	Log.Debug(fmt.Sprintf(format, args...))
+}
+
+// Fatalf 格式化输出致命错误日志
+func Fatalf(format string, args ...interface{}) {
+	Log.Fatal(fmt.Sprintf(format, args...))
+}

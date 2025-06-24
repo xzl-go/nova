@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/xzl/nova/pkg/binding"
+	"github.com/xzl-go/nova/pkg/binding"
 )
 
 // Context 请求上下文

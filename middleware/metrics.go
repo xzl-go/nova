@@ -1,14 +1,13 @@
 package middleware
 
 import (
+	core "github.com/xzl-go/nova"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/xzl/nova/core"
 )
 
 var (

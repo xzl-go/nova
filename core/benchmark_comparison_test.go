@@ -1,15 +1,15 @@
 package core
 
 import (
-	"net/http"
-	"net/url"
-	"sync"
-	"testing"
-
 	"github.com/beego/beego/v2/server/web"
 	"github.com/beego/beego/v2/server/web/context"
 	"github.com/gin-gonic/gin"
 	"github.com/labstack/echo/v4"
+	core "github.com/xzl-go/nova"
+	"net/http"
+	"net/url"
+	"sync"
+	"testing"
 )
 
 // 测试路由数据
@@ -81,7 +81,7 @@ func (m *mockResponseWriter) Header() http.Header         { return make(http.Hea
 func BenchmarkNovaRouter(b *testing.B) {
 	router := NewRouter()
 	for _, route := range testRoutes {
-		router.AddRoute(route.path, route.method, func(ctx *Context) {})
+		router.AddRoute(route.path, route.method, func(ctx *core.Context) {})
 	}
 
 	b.ResetTimer()
@@ -95,7 +95,7 @@ func BenchmarkNovaRouter(b *testing.B) {
 func BenchmarkNovaRouterConcurrent(b *testing.B) {
 	router := NewRouter()
 	for _, route := range testRoutes {
-		router.AddRoute(route.path, route.method, func(ctx *Context) {})
+		router.AddRoute(route.path, route.method, func(ctx *core.Context) {})
 	}
 
 	b.ResetTimer()
@@ -113,7 +113,7 @@ func BenchmarkNovaRouterConcurrent(b *testing.B) {
 func BenchmarkNovaRouterMemory(b *testing.B) {
 	router := NewRouter()
 	for _, route := range testRoutes {
-		router.AddRoute(route.path, route.method, func(ctx *Context) {})
+		router.AddRoute(route.path, route.method, func(ctx *core.Context) {})
 	}
 
 	var wg sync.WaitGroup

@@ -14,7 +14,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/xzl/nova/core"
+	"github.com/xzl-go/nova/core"
 )
 
 // Config 追踪配置

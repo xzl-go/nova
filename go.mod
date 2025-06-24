@@ -1,4 +1,4 @@
-module github.com/xzl/nova
+module github.com/xzl-go/nova
 
 go 1.24.3
 

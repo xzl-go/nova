@@ -75,15 +75,15 @@
 ### 方法 1：Go 包管理器安装
 
 ```bash
-go get -u github.com/xzl/nova
+go get -u github.com/xzl-go/nova
 # 或安装指定版本
-go get github.com/xzl/nova@v1.0.0
+go get github.com/xzl-go/nova@v1.0.0
 ```
 
 ### 方法 2：源码安装
 
 ```bash
-git clone https://github.com/xzl/nova.git
+git clone https://github.com/xzl-go/nova.git
 cd nova
 go mod tidy
 make build
@@ -224,8 +224,8 @@ go run main.go
 ## 📞 社区支持
 
 - 📧 邮件：17633997766@163.com
-- 💬 讨论区：[GitHub Discussions](https://github.com/xzl/nova/discussions)
-- 🐞 问题反馈：[GitHub Issues](https://github.com/xzl/nova/issues)
+- 💬 讨论区：[GitHub Discussions](https://github.com/xzl-go/nova/discussions)
+- 🐞 问题反馈：[GitHub Issues](https://github.com/xzl-go/nova/issues)
 
 ## 📄 许可证
 
@@ -238,7 +238,7 @@ go run main.go
 - 考虑赞助我们的开源工作
 
 <div align="center">
-    <a href="https://github.com/sponsors/xzl">
+    <a href="https://github.com/sponsors/xzl-go">
         <img src="https://img.shields.io/badge/sponsor-❤-ff69b4" alt="Sponsor">
     </a>
 </div>

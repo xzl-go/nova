@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/xzl/nova/core"
+	core "github.com/xzl-go/nova"
 )
 
 // RateLimiter 限流器

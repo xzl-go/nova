@@ -2,15 +2,16 @@ package middleware
 
 import (
 	"fmt"
+	"github.com/xzl-go/nova"
+	"github.com/xzl-go/nova/logger"
+	"github.com/xzl-go/nova/pkg/errors"
 	"net/http"
 	"time"
-
-	"framework/router"
 )
 
 // Logger 日志中间件
-func Logger() router.HandlerFunc {
-	return func(c *router.Context) {
+func Logger() core.HandlerFunc {
+	return func(c *core.Context) {
 		// 开始时间
 		start := time.Now()
 		path := c.Request.URL.Path
@@ -36,7 +37,7 @@ func Logger() router.HandlerFunc {
 		}
 
 		// 记录日志
-		router.Infof("[%s] %s %s %d %v",
+		logger.Infof("[%s] %s %s %d %v",
 			clientIP,
 			method,
 			path,
@@ -47,15 +48,15 @@ func Logger() router.HandlerFunc {
 }
 
 // Recovery 恢复中间件
-func Recovery() router.HandlerFunc {
-	return func(c *router.Context) {
+func Recovery() core.HandlerFunc {
+	return func(c *core.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				// 记录错误日志
-				router.Errorf("panic recovered: %v", err)
+				logger.Errorf("panic recovered: %v", err)
 
 				// 返回 500 错误
-				c.Error(500, "Internal Server Error")
+				c.Error(errors.New(errors.ErrInternal, "Internal Server Error"))
 			}
 		}()
 
@@ -64,8 +65,8 @@ func Recovery() router.HandlerFunc {
 }
 
 // CORS 跨域中间件
-func CORS() router.HandlerFunc {
-	return func(c *router.Context) {
+func CORS() core.HandlerFunc {
+	return func(c *core.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
@@ -80,8 +81,8 @@ func CORS() router.HandlerFunc {
 }
 
 // Auth 认证中间件
-func Auth() router.HandlerFunc {
-	return func(c *router.Context) {
+func Auth() core.HandlerFunc {
+	return func(c *core.Context) {
 		token := c.Request.Header.Get("Authorization")
 		if token == "" {
 			c.String(http.StatusUnauthorized, "Unauthorized")
@@ -94,8 +95,8 @@ func Auth() router.HandlerFunc {
 }
 
 // RequestID 为每个请求生成唯一 traceID
-func RequestID() router.HandlerFunc {
-	return func(c *router.Context) {
+func RequestID() core.HandlerFunc {
+	return func(c *core.Context) {
 		requestID := c.Request.Header.Get("X-Request-ID")
 		if requestID == "" {
 			requestID = fmt.Sprintf("%d", time.Now().UnixNano())
@@ -106,8 +107,8 @@ func RequestID() router.HandlerFunc {
 }
 
 // Chain 中间件链
-func Chain(middlewares ...router.HandlerFunc) router.HandlerFunc {
-	return func(c *router.Context) {
+func Chain(middlewares ...core.HandlerFunc) core.HandlerFunc {
+	return func(c *core.Context) {
 		// 保存当前中间件索引
 		index := c.Index
 		// 设置中间件索引

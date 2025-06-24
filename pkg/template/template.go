@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/xzl/nova/core"
+	"github.com/xzl-go/nova/core"
 )
 
 // Engine 模板引擎

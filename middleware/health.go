@@ -2,8 +2,9 @@ package middleware
 
 import (
 	"context"
-	"framework/router"
 	"net/http"
+
+	core "github.com/xzl-go/nova"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -21,8 +22,8 @@ func InitRedis(addr, password string, db int) {
 }
 
 // Health 健康检查中间件
-func Health() router.HandlerFunc {
-	return func(c *router.Context) {
+func Health() core.HandlerFunc {
+	return func(c *core.Context) {
 		ctx := context.Background()
 		if redisClient != nil {
 			if err := redisClient.Ping(ctx).Err(); err != nil {

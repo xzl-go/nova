@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xzl/nova/logger"
-	"github.com/xzl/nova/pkg/tree"
+	"github.com/xzl-go/nova/logger"
+	"github.com/xzl-go/nova/pkg/tree"
 	"go.uber.org/zap"
 )
 

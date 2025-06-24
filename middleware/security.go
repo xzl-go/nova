@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/xzl/nova/core"
+	"github.com/xzl-go/nova"
 )
 
 // Security 安全中间件
