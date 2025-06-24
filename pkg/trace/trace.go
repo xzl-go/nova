@@ -3,6 +3,7 @@ package trace
 import (
 	"context"
 	"fmt"
+	"github.com/xzl-go/nova"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -13,8 +14,6 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
-
-	"github.com/xzl-go/nova/core"
 )
 
 // Config 追踪配置
@@ -54,9 +53,9 @@ func Shutdown(ctx context.Context) error {
 }
 
 // Tracing 追踪中间件
-func Tracing(service string) core.HandlerFunc {
+func Tracing(service string) nova.HandlerFunc {
 	tracer := otel.Tracer(service)
-	return func(c *core.Context) {
+	return func(c *nova.Context) {
 		ctx, span := tracer.Start(c.Request.Context(), c.Request.Method+" "+c.Request.URL.Path)
 		defer span.End()
 		c.Request = c.Request.WithContext(ctx)

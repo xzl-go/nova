@@ -114,47 +114,8 @@ func SetJSONValue(data string, path string, value interface{}) (string, error) {
 
 	// 解析路径
 	keys := strings.Split(path, ".")
-	current := &v
-
-	for i, key := range keys {
-		if i == len(keys)-1 {
-			switch val := (*current).(type) {
-			case map[string]interface{}:
-				val[key] = value
-			case []interface{}:
-				index, err := strconv.Atoi(key)
-				if err != nil {
-					return "", fmt.Errorf("invalid array index: %s", key)
-				}
-				if index < 0 || index >= len(val) {
-					return "", fmt.Errorf("array index out of range: %d", index)
-				}
-				val[index] = value
-			default:
-				return "", fmt.Errorf("invalid path: %s", path)
-			}
-		} else {
-			switch val := (*current).(type) {
-			case map[string]interface{}:
-				if value, ok := val[key]; ok {
-					current = &value
-				} else {
-					val[key] = make(map[string]interface{})
-					current = &val[key]
-				}
-			case []interface{}:
-				index, err := strconv.Atoi(key)
-				if err != nil {
-					return "", fmt.Errorf("invalid array index: %s", key)
-				}
-				if index < 0 || index >= len(val) {
-					return "", fmt.Errorf("array index out of range: %d", index)
-				}
-				current = &val[index]
-			default:
-				return "", fmt.Errorf("invalid path: %s", path)
-			}
-		}
+	if err := setJSONValueRecursive(&v, keys, value); err != nil {
+		return "", err
 	}
 
 	result, err := json.Marshal(v)
@@ -162,6 +123,56 @@ func SetJSONValue(data string, path string, value interface{}) (string, error) {
 		return "", err
 	}
 	return string(result), nil
+}
+
+// setJSONValueRecursive 递归设置 JSON 路径的值，避免 map index 取地址
+func setJSONValueRecursive(current *interface{}, keys []string, value interface{}) error {
+	if len(keys) == 0 {
+		return nil
+	}
+	key := keys[0]
+	if len(keys) == 1 {
+		switch val := (*current).(type) {
+		case map[string]interface{}:
+			val[key] = value
+			return nil
+		case []interface{}:
+			index, err := strconv.Atoi(key)
+			if err != nil {
+				return fmt.Errorf("invalid array index: %s", key)
+			}
+			if index < 0 || index >= len(val) {
+				return fmt.Errorf("array index out of range: %d", index)
+			}
+			val[index] = value
+			return nil
+		default:
+			return fmt.Errorf("invalid path: %s", strings.Join(keys, "."))
+		}
+	}
+
+	switch val := (*current).(type) {
+	case map[string]interface{}:
+		next, ok := val[key]
+		if !ok {
+			m := make(map[string]interface{})
+			val[key] = m
+			next = m
+		}
+		return setJSONValueRecursive(&next, keys[1:], value)
+	case []interface{}:
+		index, err := strconv.Atoi(key)
+		if err != nil {
+			return fmt.Errorf("invalid array index: %s", key)
+		}
+		if index < 0 || index >= len(val) {
+			return fmt.Errorf("array index out of range: %d", index)
+		}
+		next := val[index]
+		return setJSONValueRecursive(&next, keys[1:], value)
+	default:
+		return fmt.Errorf("invalid path: %s", strings.Join(keys, "."))
+	}
 }
 
 // MergeJSON 合并两个 JSON 字符串

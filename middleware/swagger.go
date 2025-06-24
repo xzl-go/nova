@@ -1,13 +1,13 @@
 package middleware
 
 import (
-	core "github.com/xzl-go/nova"
+	"github.com/xzl-go/nova"
 	"net/http"
 )
 
 // Swagger Swagger 文档中间件
-func Swagger() core.HandlerFunc {
-	return func(c *core.Context) {
+func Swagger() nova.HandlerFunc {
+	return func(c *nova.Context) {
 		// 返回 Swagger UI HTML
 		c.Header("Content-Type", "text/html")
 		c.String(http.StatusOK, `

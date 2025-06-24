@@ -2,12 +2,11 @@ package template
 
 import (
 	"bytes"
+	"github.com/xzl-go/nova"
 	"html/template"
 	"io"
 	"path/filepath"
 	"sync"
-
-	"github.com/xzl-go/nova/core"
 )
 
 // Engine 模板引擎
@@ -55,13 +54,13 @@ func (e *Engine) Load(pattern string) error {
 }
 
 // Render 渲染模板
-func (e *Engine) Render(c *core.Context, name string, data interface{}) error {
+func (e *Engine) Render(c *nova.Context, name string, data interface{}) error {
 	e.mu.RLock()
 	tmpl, ok := e.templates[name]
 	e.mu.RUnlock()
 
 	if !ok {
-		return core.NewError(500, "template not found: "+name)
+		return nova.NewError(500, "template not found: "+name)
 	}
 
 	var buf bytes.Buffer
@@ -75,8 +74,8 @@ func (e *Engine) Render(c *core.Context, name string, data interface{}) error {
 }
 
 // Template 模板中间件
-func Template(e *Engine) core.HandlerFunc {
-	return func(c *core.Context) {
+func Template(e *Engine) nova.HandlerFunc {
+	return func(c *nova.Context) {
 		c.Set("template", e)
 		c.Next()
 	}

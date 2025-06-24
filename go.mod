@@ -4,10 +4,12 @@ go 1.24.3
 
 require (
 	github.com/beego/beego/v2 v2.3.8
+	github.com/bsm/ginkgo/v2 v2.12.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/gorilla/websocket v1.5.0
 	github.com/graphql-go/graphql v0.8.1
 	github.com/graphql-go/handler v0.2.4
 	github.com/hashicorp/consul/api v1.28.2

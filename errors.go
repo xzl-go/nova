@@ -1,4 +1,4 @@
-package core
+package nova
 
 // Error 错误类型
 type Error struct {

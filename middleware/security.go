@@ -7,8 +7,8 @@ import (
 )
 
 // Security 安全中间件
-func Security() core.HandlerFunc {
-	return func(c *core.Context) {
+func Security() nova.HandlerFunc {
+	return func(c *nova.Context) {
 		// CORS
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -43,8 +43,8 @@ func Security() core.HandlerFunc {
 }
 
 // CSRF CSRF 防护中间件
-func CSRF(secret string) core.HandlerFunc {
-	return func(c *core.Context) {
+func CSRF(secret string) nova.HandlerFunc {
+	return func(c *nova.Context) {
 		if c.Request.Method == "GET" || c.Request.Method == "HEAD" || c.Request.Method == "OPTIONS" {
 			c.Next()
 			return

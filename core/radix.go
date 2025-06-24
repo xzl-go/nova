@@ -3,7 +3,7 @@ package core
 import (
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
-	core "github.com/xzl-go/nova"
+	nova "github.com/xzl-go/nova"
 	"hash/fnv"
 	"net/http"
 	"strings"
@@ -40,7 +40,7 @@ const (
 type RadixNode struct {
 	path      string                      // 当前节点的路径
 	children  map[string]*RadixNode       // 子节点
-	handlers  map[string]core.HandlerFunc // HTTP方法到处理函数的映射
+	handlers  map[string]nova.HandlerFunc // HTTP方法到处理函数的映射
 	params    []string                    // 参数名列表
 	wildcard  bool                        // 是否为通配符节点
 	paramName string                      // 参数名称
@@ -77,25 +77,25 @@ var paramsPool = sync.Pool{
 
 // 多级Context池
 var ctxPools = [...]sync.Pool{
-	{New: func() interface{} { return &core.Context{Params: make(map[string]string, 4)} }},
-	{New: func() interface{} { return &core.Context{Params: make(map[string]string, 8)} }},
-	{New: func() interface{} { return &core.Context{Params: make(map[string]string, 16)} }},
+	{New: func() interface{} { return &nova.Context{Params: make(map[string]string, 4)} }},
+	{New: func() interface{} { return &nova.Context{Params: make(map[string]string, 8)} }},
+	{New: func() interface{} { return &nova.Context{Params: make(map[string]string, 16)} }},
 }
 
-func getContext(paramCount int) *core.Context {
+func getContext(paramCount int) *nova.Context {
 	switch {
 	case paramCount <= 4:
-		return ctxPools[0].Get().(*core.Context)
+		return ctxPools[0].Get().(*nova.Context)
 	case paramCount <= 8:
-		return ctxPools[1].Get().(*core.Context)
+		return ctxPools[1].Get().(*nova.Context)
 	case paramCount <= 16:
-		return ctxPools[2].Get().(*core.Context)
+		return ctxPools[2].Get().(*nova.Context)
 	default:
-		return &core.Context{Params: make(map[string]string, paramCount)}
+		return &nova.Context{Params: make(map[string]string, paramCount)}
 	}
 }
 
-func putContext(ctx *core.Context) {
+func putContext(ctx *nova.Context) {
 	for k := range ctx.Params {
 		delete(ctx.Params, k)
 	}
@@ -161,7 +161,7 @@ func (n *RadixNode) findChildSIMD(part string) *RadixNode {
 }
 
 // findRoute 在 Radix 树中查找路由
-func (n *RadixNode) findRoute(method, path string) (core.HandlerFunc, map[string]string, bool) {
+func (n *RadixNode) findRoute(method, path string) (nova.HandlerFunc, map[string]string, bool) {
 	// 分割路径
 	parts := strings.Split(path, "/")
 	if len(parts) == 0 {
@@ -222,7 +222,7 @@ func (n *RadixNode) findRoute(method, path string) (core.HandlerFunc, map[string
 
 // 路由缓存项
 type cacheItem struct {
-	handler core.HandlerFunc
+	handler nova.HandlerFunc
 	params  map[string]string
 	// 访问计数
 	accessCount uint64
@@ -269,7 +269,7 @@ func NewRouter() *Router {
 		New: func() interface{} {
 			return &RadixNode{
 				children: make(map[string]*RadixNode, preAllocSize),
-				handlers: make(map[string]core.HandlerFunc),
+				handlers: make(map[string]nova.HandlerFunc),
 			}
 		},
 	}
@@ -332,7 +332,7 @@ func (r *Router) putNode(node *RadixNode) {
 	// 清空节点数据
 	node.path = ""
 	node.children = make(map[string]*RadixNode, preAllocSize)
-	node.handlers = make(map[string]core.HandlerFunc)
+	node.handlers = make(map[string]nova.HandlerFunc)
 	node.params = nil
 	node.wildcard = false
 	node.paramName = ""
@@ -450,17 +450,17 @@ func (c *hotCache) warmup(key string) {
 func (r *Router) BatchAddRoutes(routes []struct {
 	Method  string
 	Path    string
-	Handler core.HandlerFunc
+	Handler nova.HandlerFunc
 }) error {
 	// 按方法分组
 	groupedRoutes := make(map[string][]struct {
 		Path    string
-		Handler core.HandlerFunc
+		Handler nova.HandlerFunc
 	})
 	for _, route := range routes {
 		groupedRoutes[route.Method] = append(groupedRoutes[route.Method], struct {
 			Path    string
-			Handler core.HandlerFunc
+			Handler nova.HandlerFunc
 		}{route.Path, route.Handler})
 	}
 
@@ -469,7 +469,7 @@ func (r *Router) BatchAddRoutes(routes []struct {
 		// 按分片分组
 		shardedRoutes := make(map[int][]struct {
 			Path    string
-			Handler core.HandlerFunc
+			Handler nova.HandlerFunc
 		})
 		for _, route := range methodRoutes {
 			shardIdx := getShard(route.Path)
@@ -483,7 +483,7 @@ func (r *Router) BatchAddRoutes(routes []struct {
 			wg.Add(1)
 			go func(shardIdx int, routes []struct {
 				Path    string
-				Handler core.HandlerFunc
+				Handler nova.HandlerFunc
 			}) {
 				defer wg.Done()
 				sh := r.methodShards[method][shardIdx]
@@ -528,7 +528,7 @@ func getShard(path string) int {
 }
 
 // addRoute 添加路由到 Radix 树
-func (n *RadixNode) addRoute(method, path string, handler core.HandlerFunc) error {
+func (n *RadixNode) addRoute(method, path string, handler nova.HandlerFunc) error {
 	// 分割路径
 	parts := strings.Split(path, "/")
 	if len(parts) == 0 {
@@ -556,7 +556,7 @@ func (n *RadixNode) addRoute(method, path string, handler core.HandlerFunc) erro
 			child = &RadixNode{
 				path:      part,
 				children:  make(map[string]*RadixNode),
-				handlers:  make(map[string]core.HandlerFunc),
+				handlers:  make(map[string]nova.HandlerFunc),
 				wildcard:  isParam,
 				paramName: paramName,
 			}
@@ -582,7 +582,7 @@ func (n *RadixNode) addRoute(method, path string, handler core.HandlerFunc) erro
 }
 
 // FindRoute 查找路由
-func (r *Router) FindRoute(method, path string) (core.HandlerFunc, map[string]string, bool) {
+func (r *Router) FindRoute(method, path string) (nova.HandlerFunc, map[string]string, bool) {
 	// 尝试从无锁热点缓存获取
 	cacheKey := method + ":" + path
 	if item := r.hotCache.get(cacheKey); item != nil {
@@ -628,7 +628,7 @@ func (r *Router) FindRoute(method, path string) (core.HandlerFunc, map[string]st
 }
 
 // AddRoute 添加路由
-func (r *Router) AddRoute(method, path string, handler core.HandlerFunc) error {
+func (r *Router) AddRoute(method, path string, handler nova.HandlerFunc) error {
 	shards, ok := r.methodShards[method]
 	if !ok {
 		return fmt.Errorf("unsupported method: %s", method)
@@ -645,8 +645,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.NotFound(w, req)
 		return
 	}
-	ctx := core.GetContext(w, req)
+	ctx := nova.GetContext(w, req)
 	ctx.Params = params
 	handler(ctx)
-	core.PutContext(ctx)
+	nova.PutContext(ctx)
 }

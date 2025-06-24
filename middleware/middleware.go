@@ -10,8 +10,8 @@ import (
 )
 
 // Logger 日志中间件
-func Logger() core.HandlerFunc {
-	return func(c *core.Context) {
+func Logger() nova.HandlerFunc {
+	return func(c *nova.Context) {
 		// 开始时间
 		start := time.Now()
 		path := c.Request.URL.Path
@@ -48,8 +48,8 @@ func Logger() core.HandlerFunc {
 }
 
 // Recovery 恢复中间件
-func Recovery() core.HandlerFunc {
-	return func(c *core.Context) {
+func Recovery() nova.HandlerFunc {
+	return func(c *nova.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				// 记录错误日志
@@ -65,8 +65,8 @@ func Recovery() core.HandlerFunc {
 }
 
 // CORS 跨域中间件
-func CORS() core.HandlerFunc {
-	return func(c *core.Context) {
+func CORS() nova.HandlerFunc {
+	return func(c *nova.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
@@ -81,8 +81,8 @@ func CORS() core.HandlerFunc {
 }
 
 // Auth 认证中间件
-func Auth() core.HandlerFunc {
-	return func(c *core.Context) {
+func Auth() nova.HandlerFunc {
+	return func(c *nova.Context) {
 		token := c.Request.Header.Get("Authorization")
 		if token == "" {
 			c.String(http.StatusUnauthorized, "Unauthorized")
@@ -95,8 +95,8 @@ func Auth() core.HandlerFunc {
 }
 
 // RequestID 为每个请求生成唯一 traceID
-func RequestID() core.HandlerFunc {
-	return func(c *core.Context) {
+func RequestID() nova.HandlerFunc {
+	return func(c *nova.Context) {
 		requestID := c.Request.Header.Get("X-Request-ID")
 		if requestID == "" {
 			requestID = fmt.Sprintf("%d", time.Now().UnixNano())
@@ -107,8 +107,8 @@ func RequestID() core.HandlerFunc {
 }
 
 // Chain 中间件链
-func Chain(middlewares ...core.HandlerFunc) core.HandlerFunc {
-	return func(c *core.Context) {
+func Chain(middlewares ...nova.HandlerFunc) nova.HandlerFunc {
+	return func(c *nova.Context) {
 		// 保存当前中间件索引
 		index := c.Index
 		// 设置中间件索引
