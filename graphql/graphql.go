@@ -13,33 +13,27 @@ import (
 // Schema GraphQL模式
 type Schema struct {
 	schema *graphql.Schema
+	types  map[string]*graphql.Object
 }
 
 // NewSchema 创建新的GraphQL模式
 func NewSchema() *Schema {
-	return &Schema{}
+	return &Schema{
+		types: make(map[string]*graphql.Object),
+	}
 }
 
 // AddType 添加类型
 func (s *Schema) AddType(name string, fields graphql.Fields) {
-	// 创建对象类型
-	objectType := graphql.NewObject(graphql.ObjectConfig{
+	objType := graphql.NewObject(graphql.ObjectConfig{
 		Name:   name,
 		Fields: fields,
 	})
-
-	// 添加到模式
-	if s.schema == nil {
-		s.schema = &graphql.Schema{}
-	}
+	s.types[name] = objType
 }
 
 // AddQuery 添加查询
 func (s *Schema) AddQuery(name string, field *graphql.Field) {
-	if s.schema == nil {
-		s.schema = &graphql.Schema{}
-	}
-
 	// 创建查询类型
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name:   "Query",
@@ -47,48 +41,39 @@ func (s *Schema) AddQuery(name string, field *graphql.Field) {
 	})
 
 	// 更新模式
-	s.schema, _ = graphql.NewSchema(graphql.SchemaConfig{
+	schema, _ := graphql.NewSchema(graphql.SchemaConfig{
 		Query: queryType,
 	})
+	s.schema = &schema
 }
 
 // AddMutation 添加变更
 func (s *Schema) AddMutation(name string, field *graphql.Field) {
-	if s.schema == nil {
-		s.schema = &graphql.Schema{}
-	}
-
-	// 创建变更类型
 	mutationType := graphql.NewObject(graphql.ObjectConfig{
 		Name:   "Mutation",
 		Fields: graphql.Fields{name: field},
 	})
 
-	// 更新模式
-	s.schema, _ = graphql.NewSchema(graphql.SchemaConfig{
+	schema, _ := graphql.NewSchema(graphql.SchemaConfig{
 		Query:    s.schema.QueryType(),
 		Mutation: mutationType,
 	})
+	s.schema = &schema
 }
 
 // AddSubscription 添加订阅
 func (s *Schema) AddSubscription(name string, field *graphql.Field) {
-	if s.schema == nil {
-		s.schema = &graphql.Schema{}
-	}
-
-	// 创建订阅类型
 	subscriptionType := graphql.NewObject(graphql.ObjectConfig{
 		Name:   "Subscription",
 		Fields: graphql.Fields{name: field},
 	})
 
-	// 更新模式
-	s.schema, _ = graphql.NewSchema(graphql.SchemaConfig{
+	schema, _ := graphql.NewSchema(graphql.SchemaConfig{
 		Query:        s.schema.QueryType(),
 		Mutation:     s.schema.MutationType(),
 		Subscription: subscriptionType,
 	})
+	s.schema = &schema
 }
 
 // Handler 创建HTTP处理器

@@ -3,12 +3,11 @@ package nova
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/xzl-go/nova/binding"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/xzl-go/nova/pkg/binding"
 )
 
 // Context 请求上下文

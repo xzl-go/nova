@@ -3,8 +3,8 @@ package middleware
 import (
 	"fmt"
 	"github.com/xzl-go/nova"
+	"github.com/xzl-go/nova/errors"
 	"github.com/xzl-go/nova/logger"
-	"github.com/xzl-go/nova/pkg/errors"
 	"net/http"
 	"time"
 )

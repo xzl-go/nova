@@ -18,7 +18,7 @@ type Claims struct {
 
 // GenerateToken 生成JWT令牌
 func GenerateToken(userID uint, username string) (string, error) {
-	conf := config.Get()
+	conf := config.NewConfig().UnmarshalToConfigStruct()
 
 	claims := Claims{
 		UserID:   userID,
@@ -31,15 +31,15 @@ func GenerateToken(userID uint, username string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(conf.JWT.Secret)
+	return token.SignedString(*conf.JWT.Secret)
 }
 
 // ParseToken 解析JWT令牌
 func ParseToken(tokenString string) (*Claims, error) {
-	conf := config.Get()
+	conf := config.NewConfig().UnmarshalToConfigStruct()
 
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return conf.JWT.Secret, nil
+		return *conf.JWT.Secret, nil
 	})
 
 	if err != nil {

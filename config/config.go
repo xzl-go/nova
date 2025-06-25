@@ -1,49 +1,185 @@
 package config
 
 import (
-	"encoding/json"
-	"os"
+	"context"
+	"fmt"
 	"sync"
+	"time"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/viper"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
+
+// Config 配置中心
+type Config struct {
+	viper    *viper.Viper
+	etcd     *clientv3.Client
+	watchers []ConfigWatcher
+	mu       sync.RWMutex
+}
+
+// ConfigWatcher 配置监听器
+type ConfigWatcher interface {
+	OnConfigChange(key string, value interface{})
+}
+
+// NewConfig 创建配置中心
+func NewConfig() *Config {
+	v := viper.New()
+	v.SetConfigType("yaml")
+	v.AutomaticEnv()
+
+	return &Config{
+		viper:    v,
+		watchers: make([]ConfigWatcher, 0),
+	}
+}
+
+// LoadFile 从文件加载配置
+func (c *Config) LoadFile(path string) error {
+	c.viper.SetConfigFile(path)
+	return c.viper.ReadInConfig()
+}
+
+// LoadEtcd 从etcd加载配置
+func (c *Config) LoadEtcd(endpoints []string, prefix string) error {
+	client, err := clientv3.New(clientv3.Config{
+		Endpoints:   endpoints,
+		DialTimeout: 5 * time.Second,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create etcd client: %v", err)
+	}
+
+	c.etcd = client
+	c.watchEtcd(prefix)
+	return nil
+}
+
+// Get 获取配置
+func (c *Config) Get(key string) interface{} {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.viper.Get(key)
+}
+
+// GetString 获取字符串配置
+func (c *Config) GetString(key string) string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.viper.GetString(key)
+}
+
+// GetInt 获取整数配置
+func (c *Config) GetInt(key string) int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.viper.GetInt(key)
+}
+
+// GetBool 获取布尔配置
+func (c *Config) GetBool(key string) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.viper.GetBool(key)
+}
+
+// GetStringSlice 获取字符串切片配置
+func (c *Config) GetStringSlice(key string) []string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.viper.GetStringSlice(key)
+}
+
+// Set 设置配置
+func (c *Config) Set(key string, value interface{}) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.viper.Set(key, value)
+}
+
+// AddWatcher 添加配置监听器
+func (c *Config) AddWatcher(watcher ConfigWatcher) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.watchers = append(c.watchers, watcher)
+}
+
+// watchEtcd 监听etcd配置变化
+func (c *Config) watchEtcd(prefix string) {
+	go func() {
+		watchCh := c.etcd.Watch(context.Background(), prefix, clientv3.WithPrefix())
+		for {
+			select {
+			case resp := <-watchCh:
+				for _, ev := range resp.Events {
+					key := string(ev.Kv.Key)
+					value := string(ev.Kv.Value)
+					c.Set(key, value)
+					c.notifyWatchers(key, value)
+				}
+			}
+		}
+	}()
+}
+
+// notifyWatchers 通知所有监听器
+func (c *Config) notifyWatchers(key string, value interface{}) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	for _, watcher := range c.watchers {
+		watcher.OnConfigChange(key, value)
+	}
+}
+
+// Unmarshal 将配置解析到结构体
+func (c *Config) Unmarshal(rawVal interface{}) error {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.viper.Unmarshal(rawVal)
+}
+
+// WatchConfig 监听配置文件变化
+func (c *Config) WatchConfig() {
+	c.viper.WatchConfig()
+	c.viper.OnConfigChange(func(e fsnotify.Event) {
+		c.notifyWatchers(e.Name, nil)
+	})
+}
 
 // Config 配置结构体
-type Config struct {
-	Server *ServerConfig `json:"server,omitempty"`
-	JWT    *JWTConfig    `json:"jwt,omitempty"`
-	Log    *LogConfig    `json:"log,omitempty"`
+// 支持 Server、JWT、Log 等常用配置
+// 可通过 viper/etcd 动态加载，也可本地静态加载
+
+type ConfigStruct struct {
+	Server *ServerConfig `json:"server,omitempty" mapstructure:"server"`
+	JWT    *JWTConfig    `json:"jwt,omitempty" mapstructure:"jwt"`
+	Log    *LogConfig    `json:"log,omitempty" mapstructure:"log"`
 }
 
-// ServerConfig 服务器配置
 type ServerConfig struct {
-	Port         *int    `json:"port,omitempty"`
-	ReadTimeout  *int    `json:"read_timeout,omitempty"`
-	WriteTimeout *int    `json:"write_timeout,omitempty"`
-	Mode         *string `json:"mode,omitempty"`
+	Port         *int    `json:"port,omitempty" mapstructure:"port"`
+	ReadTimeout  *int    `json:"read_timeout,omitempty" mapstructure:"read_timeout"`
+	WriteTimeout *int    `json:"write_timeout,omitempty" mapstructure:"write_timeout"`
+	Mode         *string `json:"mode,omitempty" mapstructure:"mode"`
 }
 
-// JWTConfig JWT配置
 type JWTConfig struct {
-	Secret     *string `json:"secret,omitempty"`
-	ExpireTime *int    `json:"expire_time,omitempty"`
+	Secret     *string `json:"secret,omitempty" mapstructure:"secret"`
+	ExpireTime *int    `json:"expire_time,omitempty" mapstructure:"expire_time"`
 }
 
-// LogConfig 日志配置
 type LogConfig struct {
-	Level      *string `json:"level,omitempty"`
-	Filename   *string `json:"filename,omitempty"`
-	MaxSize    *int    `json:"max_size,omitempty"`
-	MaxBackups *int    `json:"max_backups,omitempty"`
-	MaxAge     *int    `json:"max_age,omitempty"`
-	Compress   *bool   `json:"compress,omitempty"`
+	Level      *string `json:"level,omitempty" mapstructure:"level"`
+	Filename   *string `json:"filename,omitempty" mapstructure:"filename"`
+	MaxSize    *int    `json:"max_size,omitempty" mapstructure:"max_size"`
+	MaxBackups *int    `json:"max_backups,omitempty" mapstructure:"max_backups"`
+	MaxAge     *int    `json:"max_age,omitempty" mapstructure:"max_age"`
+	Compress   *bool   `json:"compress,omitempty" mapstructure:"compress"`
 }
 
-var (
-	config *Config
-	once   sync.Once
-)
-
-// 默认配置
-var defaultConfig = &Config{
+var defaultConfig = &ConfigStruct{
 	Server: &ServerConfig{
 		Port:         ptr(8080),
 		ReadTimeout:  ptr(60),
@@ -64,21 +200,18 @@ var defaultConfig = &Config{
 	},
 }
 
-// ptr 返回指针
 func ptr[T any](v T) *T {
 	return &v
 }
 
-// mergeConfig 合并配置
-func mergeConfig(dst, src *Config) *Config {
+// MergeConfig 合并配置，优先 src
+func MergeConfig(dst, src *ConfigStruct) *ConfigStruct {
 	if dst == nil {
-		dst = &Config{}
+		dst = &ConfigStruct{}
 	}
 	if src == nil {
 		return dst
 	}
-
-	// 合并 Server 配置
 	if src.Server != nil {
 		if dst.Server == nil {
 			dst.Server = &ServerConfig{}
@@ -96,8 +229,6 @@ func mergeConfig(dst, src *Config) *Config {
 			dst.Server.Mode = src.Server.Mode
 		}
 	}
-
-	// 合并 JWT 配置
 	if src.JWT != nil {
 		if dst.JWT == nil {
 			dst.JWT = &JWTConfig{}
@@ -109,8 +240,6 @@ func mergeConfig(dst, src *Config) *Config {
 			dst.JWT.ExpireTime = src.JWT.ExpireTime
 		}
 	}
-
-	// 合并 Log 配置
 	if src.Log != nil {
 		if dst.Log == nil {
 			dst.Log = &LogConfig{}
@@ -134,153 +263,12 @@ func mergeConfig(dst, src *Config) *Config {
 			dst.Log.Compress = src.Log.Compress
 		}
 	}
-
 	return dst
 }
 
-// Load 加载配置文件
-func Load(path string) (*Config, error) {
-	once.Do(func() {
-		config = &Config{}
-		file, err := os.Open(path)
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
-
-		decoder := json.NewDecoder(file)
-		if err := decoder.Decode(config); err != nil {
-			panic(err)
-		}
-		config = mergeConfig(defaultConfig, config)
-	})
-	return config, nil
-}
-
-// LoadFromBytes 从字节数组加载配置
-func LoadFromBytes(data []byte) (*Config, error) {
-	cfg := &Config{}
-	if err := json.Unmarshal(data, cfg); err != nil {
-		return nil, err
-	}
-	config = mergeConfig(defaultConfig, cfg)
-	return config, nil
-}
-
-// LoadFromMap 从map加载配置
-func LoadFromMap(m map[string]interface{}) (*Config, error) {
-	data, err := json.Marshal(m)
-	if err != nil {
-		return nil, err
-	}
-	return LoadFromBytes(data)
-}
-
-// Get 获取配置实例
-func Get() *Config {
-	if config == nil {
-		config = defaultConfig
-	}
-	return config
-}
-
-// Set 设置配置实例
-func Set(cfg *Config) {
-	config = mergeConfig(defaultConfig, cfg)
-}
-
-// GetServerPort 获取服务器端口
-func GetServerPort() int {
-	if config == nil || config.Server == nil || config.Server.Port == nil {
-		return *defaultConfig.Server.Port
-	}
-	return *config.Server.Port
-}
-
-// GetServerReadTimeout 获取服务器读取超时
-func GetServerReadTimeout() int {
-	if config == nil || config.Server == nil || config.Server.ReadTimeout == nil {
-		return *defaultConfig.Server.ReadTimeout
-	}
-	return *config.Server.ReadTimeout
-}
-
-// GetServerWriteTimeout 获取服务器写入超时
-func GetServerWriteTimeout() int {
-	if config == nil || config.Server == nil || config.Server.WriteTimeout == nil {
-		return *defaultConfig.Server.WriteTimeout
-	}
-	return *config.Server.WriteTimeout
-}
-
-// GetServerMode 获取服务器模式
-func GetServerMode() string {
-	if config == nil || config.Server == nil || config.Server.Mode == nil {
-		return *defaultConfig.Server.Mode
-	}
-	return *config.Server.Mode
-}
-
-// GetJWTSecret 获取JWT密钥
-func GetJWTSecret() string {
-	if config == nil || config.JWT == nil || config.JWT.Secret == nil {
-		return *defaultConfig.JWT.Secret
-	}
-	return *config.JWT.Secret
-}
-
-// GetJWTExpireTime 获取JWT过期时间
-func GetJWTExpireTime() int {
-	if config == nil || config.JWT == nil || config.JWT.ExpireTime == nil {
-		return *defaultConfig.JWT.ExpireTime
-	}
-	return *config.JWT.ExpireTime
-}
-
-// GetLogLevel 获取日志级别
-func GetLogLevel() string {
-	if config == nil || config.Log == nil || config.Log.Level == nil {
-		return *defaultConfig.Log.Level
-	}
-	return *config.Log.Level
-}
-
-// GetLogFilename 获取日志文件名
-func GetLogFilename() string {
-	if config == nil || config.Log == nil || config.Log.Filename == nil {
-		return *defaultConfig.Log.Filename
-	}
-	return *config.Log.Filename
-}
-
-// GetLogMaxSize 获取日志最大大小
-func GetLogMaxSize() int {
-	if config == nil || config.Log == nil || config.Log.MaxSize == nil {
-		return *defaultConfig.Log.MaxSize
-	}
-	return *config.Log.MaxSize
-}
-
-// GetLogMaxBackups 获取日志最大备份数
-func GetLogMaxBackups() int {
-	if config == nil || config.Log == nil || config.Log.MaxBackups == nil {
-		return *defaultConfig.Log.MaxBackups
-	}
-	return *config.Log.MaxBackups
-}
-
-// GetLogMaxAge 获取日志最大保存时间
-func GetLogMaxAge() int {
-	if config == nil || config.Log == nil || config.Log.MaxAge == nil {
-		return *defaultConfig.Log.MaxAge
-	}
-	return *config.Log.MaxAge
-}
-
-// GetLogCompress 获取日志是否压缩
-func GetLogCompress() bool {
-	if config == nil || config.Log == nil || config.Log.Compress == nil {
-		return *defaultConfig.Log.Compress
-	}
-	return *config.Log.Compress
+// UnmarshalToConfigStruct 将当前配置反序列化到 ConfigStruct 并合并默认值
+func (c *Config) UnmarshalToConfigStruct() *ConfigStruct {
+	var cfg ConfigStruct
+	_ = c.Unmarshal(&cfg)
+	return MergeConfig(defaultConfig, &cfg)
 }

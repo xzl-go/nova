@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/xzl-go/nova/pkg/validator"
+	"github.com/xzl-go/nova/validator"
 )
 
 // Binding 参数绑定接口
