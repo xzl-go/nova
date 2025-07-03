@@ -3,10 +3,11 @@ package nova
 import (
 	"context"
 	"fmt"
-	"github.com/xzl-go/nova/tree"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/xzl-go/nova/tree"
 
 	"github.com/xzl-go/nova/logger"
 	"go.uber.org/zap"
@@ -194,16 +195,18 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (e *Engine) handle(c *Context) {
 	parts := parsePattern(c.Request.URL.Path)
 	node := e.router.Search(parts, 0)
+	middlewares := e.groups[0].middlewares
 
 	if node != nil {
 		c.Params = node.GetParams(c.Request.URL.Path)
-		// 转换处理函数
-		c.handlers = make([]HandlerFunc, len(node.Handlers))
-		for i, handler := range node.Handlers {
-			c.handlers[i] = handler.(*handlerAdapter).handler
+		// 正确合并全局中间件和路由 handler
+		c.handlers = make([]HandlerFunc, 0, len(middlewares)+len(node.Handlers))
+		c.handlers = append(c.handlers, middlewares...)
+		for _, handler := range node.Handlers {
+			c.handlers = append(c.handlers, handler.(*handlerAdapter).handler)
 		}
 	} else {
-		// 改进404处理
+		// 404处理
 		c.handlers = []HandlerFunc{func(c *Context) {
 			c.JSON(http.StatusNotFound, map[string]interface{}{
 				"code":    404,

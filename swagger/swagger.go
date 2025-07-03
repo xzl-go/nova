@@ -3,6 +3,7 @@ package swagger
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"sync"
 )
 
@@ -97,4 +98,15 @@ func SwaggerUIHandler(w http.ResponseWriter, r *http.Request) {
 </html>`
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(html))
+}
+
+// ExportRoutesToJson 导出所有已注册路由为 JSON 文件
+func ExportRoutesToJson(filename string) error {
+	routesMu.RLock()
+	defer routesMu.RUnlock()
+	data, err := json.MarshalIndent(routes, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filename, data, 0644)
 }

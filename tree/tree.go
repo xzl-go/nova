@@ -94,9 +94,16 @@ func (n *Node) matchChildren(part string) []*Node {
 func (n *Node) GetParams(pattern string) map[string]string {
 	params := make(map[string]string)
 	parts := strings.Split(pattern, "/")
-	searchParts := strings.Split(n.Pattern, "/")
+	nPattern := n.Pattern
+	if nPattern == "" {
+		return params
+	}
+	searchParts := strings.Split(nPattern, "/")
 
 	for index, part := range searchParts {
+		if len(part) == 0 || index >= len(parts) {
+			continue
+		}
 		if part[0] == ':' {
 			params[part[1:]] = parts[index]
 		}
